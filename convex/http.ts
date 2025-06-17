@@ -102,6 +102,7 @@ http.route({
 
       const {
         user_id,
+        userId, // Add this as fallback
         age,
         height,
         weight,
@@ -111,6 +112,20 @@ http.route({
         fitness_level,
         dietary_restrictions,
       } = payload;
+
+      // Use whichever one is provided
+      const actualUserId = user_id || userId;
+
+      if (!actualUserId) {
+        console.error("❌ No user ID provided in payload:", payload);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "User ID is required",
+          }),
+          { status: 400 }
+        );
+      }
 
       // gemini model
       const model = genAi.getGenerativeModel({
@@ -229,7 +244,7 @@ http.route({
       // save the plans to the database
       console.log("📦 Saving plans to the database...");
       const planId = await ctx.runMutation(internal.plans.createPlan, {
-        userId: user_id,
+        userId: actualUserId,
         name: `${fitness_goal} Plan - ${new Date().toLocaleDateString()}`,
         workoutPlan: workoutPlan,
         dietPlan: dietPlan,
